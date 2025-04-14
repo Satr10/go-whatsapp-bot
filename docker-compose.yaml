@@ -1,0 +1,7 @@
+services:
+  whatshappbot:
+    image: go-whatsapp-bot:latest
+    environment:
+      - LOG_LEVEL=${LOG_LEVEL}
+      - DB_CONNECTION_STRING=${DB_CONNECTION_STRING}
+      - DB_TYPE=${DB_TYPE}
