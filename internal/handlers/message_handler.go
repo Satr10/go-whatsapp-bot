@@ -24,7 +24,7 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 
 	// Simple command handling example
 	if lowerText == ".ping" {
-		err := SendTextMessage(client, msg.Info.Chat, "Pong!")
+		err := SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, "PONG", true)
 		if err != nil {
 			// Log error properly
 			fmt.Printf("Error sending pong: %v\n", err)
@@ -42,7 +42,7 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 
 	// test reply
 	if lowerText == ".reply" {
-		err := ReplySpecificMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, "halo")
+		err := SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, "halo", true)
 		if err != nil {
 			fmt.Println("Error Mengirim Specific Reply: ", err)
 		}
@@ -55,19 +55,6 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 		}
 	}
 
-}
-
-// SendTextMessage is a helper function to send a text message to a chat.
-// It takes a client, recipient JID, and text string.
-// It sets the chat presence to "composing" and then sends a message with the given text.
-// The function returns an error if there is a problem sending the message.
-func SendTextMessage(client *whatsmeow.Client, recipient types.JID, text string) error {
-	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaText)
-	_, err := client.SendMessage(context.Background(), recipient, &waE2E.Message{ // Use waProto if needed, check whatsmeow examples
-		Conversation: proto.String(text),
-	})
-	// Consider adding retries or better error handling
-	return err
 }
 
 // SendImage is a helper function to send images to a chat.
@@ -104,6 +91,8 @@ func SendImage(client *whatsmeow.Client, recipient types.JID, imagePath string, 
 	_, err = client.SendMessage(context.Background(), recipient, &waE2E.Message{
 		ImageMessage: imageMsg,
 	})
+
+	// hapus file setelah kirim, berguna untuk api dll
 	if deleteAfter {
 		err := os.Remove(imagePath)
 		if err != nil {
@@ -115,27 +104,29 @@ func SendImage(client *whatsmeow.Client, recipient types.JID, imagePath string, 
 	return err
 }
 
-// ReplySpecificMessage is a helper function to send a reply to a specific message.
-// It takes a client, StanzaID, sender JID, quotedMessage, recipient JID, and textToSend.
-// It constructs a message with the given text and context information containing the
-// quoted message and sends it to the recipient chat.
+// SendTextMessage sends a text message to a recipient chat.
+// If isReply is true, a reply message is sent with the quoted message.
+// Otherwise, a regular conversation message is sent.
 // Returns an error if there is a problem sending the message.
-func ReplySpecificMessage(client *whatsmeow.Client, StanzaID types.MessageID, sender types.JID, quotedMessage *waE2E.Message, recipient types.JID, textToSend string) error {
-	msgToSend := &waE2E.Message{}
+func SendTextMessage(client *whatsmeow.Client, StanzaID types.MessageID, sender types.JID, quotedMessage *waE2E.Message, recipient types.JID, textToSend string, isReply bool) error {
 
-	msgToSend.ExtendedTextMessage = &waE2E.ExtendedTextMessage{
-		Text: proto.String(textToSend),
-		ContextInfo: &waE2E.ContextInfo{
-			StanzaID:      proto.String(StanzaID),
-			Participant:   proto.String(sender.String()),
-			QuotedMessage: quotedMessage,
-		},
+	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaText)
+	defer client.SendChatPresence(recipient, types.ChatPresencePaused, types.ChatPresenceMediaText)
+
+	msgToSend := &waE2E.Message{}
+	if isReply {
+		msgToSend.ExtendedTextMessage = &waE2E.ExtendedTextMessage{
+			Text: proto.String(textToSend),
+			ContextInfo: &waE2E.ContextInfo{
+				StanzaID:      proto.String(StanzaID),
+				Participant:   proto.String(sender.String()),
+				QuotedMessage: quotedMessage,
+			},
+		}
+	} else {
+		msgToSend.Conversation = proto.String(textToSend)
 	}
 	_, err := client.SendMessage(context.Background(), recipient, msgToSend)
-	if err != nil {
-		fmt.Println("Error Mengirim Specific Reply: ", err)
-		return err
-	}
 	return err
 }
 
@@ -149,12 +140,12 @@ func SendVoiceMessage(client *whatsmeow.Client, recipient types.JID, audioPath s
 	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaAudio)
 	audioBytes, err := os.ReadFile(audioPath)
 	if err != nil {
-		fmt.Println("Error reading audio:", err)
+
 		return err
 	}
 	fileForDuration, err := os.Open(audioPath)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+
 		return err
 	}
 	defer fileForDuration.Close()
@@ -162,7 +153,7 @@ func SendVoiceMessage(client *whatsmeow.Client, recipient types.JID, audioPath s
 	//get audio duration
 	duration, err := getOggDurationMs(fileForDuration)
 	if err != nil {
-		fmt.Println("Error getting audio duration:", err)
+
 		return err
 	}
 
@@ -197,6 +188,8 @@ func SendVoiceMessage(client *whatsmeow.Client, recipient types.JID, audioPath s
 	}
 	return err
 }
+
+// HELPER FUNCTION
 
 func getOggDurationMs(reader io.Reader) (int64, error) {
 	// For simplicity, we read the entire Ogg file into a byte slice
