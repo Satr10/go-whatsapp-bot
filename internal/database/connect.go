@@ -14,7 +14,7 @@ import (
 func ConnectContainer() (*sqlstore.Container, waLog.Logger, error) {
 	dbLog := waLog.Stdout("Database", config.Config("LOG_LEVEL"), true)
 
-	container, err := sqlstore.New(config.Config("DB_TPYE"), config.Config("DB_CONNECTION_STRING"), dbLog)
+	container, err := sqlstore.New(config.Config("DB_TYPE"), config.Config("DB_CONNECTION_STRING"), dbLog)
 	if err != nil {
 		panic(err)
 	}
