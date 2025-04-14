@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	apiclient "github.com/Satr10/go-whatsapp-bot/internal/client"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/types"
@@ -52,6 +53,33 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 		err := SendVoiceMessage(client, msg.Info.Chat, "testing_folder/youtube_gBnalcSi138_audio.ogg", false)
 		if err != nil {
 			fmt.Println("Error kirim mp3: ", err)
+		}
+	}
+
+	if lowerText == ".quote" {
+		quote, err := apiclient.GetQuote()
+		if err != nil {
+			fmt.Println("Error Mendapatkan GetQuote: ", err)
+		}
+
+		message := fmt.Sprintf("✨ *%v*\n_- %v_", quote.Quote, quote.Author)
+		err = SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, message, true)
+		if err != nil {
+			fmt.Println("Error Mengirim Specific Reply: ", err)
+		}
+	}
+
+	if strings.Contains(lowerText, "fufufafa") {
+		quote, err := apiclient.RandomFufufafa()
+		if err != nil {
+			fmt.Println("Error Mendapatkan GetQuote: ", err)
+		}
+
+		message := quote.Content
+
+		err = SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, message, true)
+		if err != nil {
+			fmt.Println("Error Mengirim Specific Reply: ", err)
 		}
 	}
 
