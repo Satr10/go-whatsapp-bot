@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	apiclient "github.com/Satr10/go-whatsapp-bot/internal/client"
 	"go.mau.fi/whatsmeow"
@@ -25,7 +26,8 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 
 	// Simple command handling example
 	if lowerText == ".ping" {
-		err := SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, "PONG", true)
+		startTime := time.Now()
+		err := SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, fmt.Sprintf("PONG\n_%v_", time.Since(startTime)), true)
 		if err != nil {
 			// Log error properly
 			fmt.Printf("Error sending pong: %v\n", err)
