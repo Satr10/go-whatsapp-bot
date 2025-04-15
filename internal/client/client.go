@@ -80,7 +80,6 @@ func RandomMeme() (gambar []byte, memeInfo string, err error) {
 	if err != nil {
 		return nil, "", err
 	}
-	fmt.Println(memeData)
 
 	req, err := http.NewRequest("GET", memeData.Meme.ImageURL, nil)
 	if err != nil {
