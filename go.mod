@@ -1,6 +1,6 @@
 module github.com/Satr10/go-whatsapp-bot
 
-go 1.24.2
+go 1.24
 
 require (
 	github.com/jackc/pgx/v5 v5.7.4
