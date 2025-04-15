@@ -65,3 +65,15 @@ type SPXData struct {
 	Detail  string `json:"detail"`
 	Debug   string `json:"debug"`
 }
+
+type OneCakPost struct {
+	Meme struct {
+		PostURL    string `json:"PostURL"`
+		Title      string `json:"Title"`
+		ImageURL   string `json:"ImageUrl"`
+		Like       string `json:"Like"`
+		Uploader   string `json:"Uploader"`
+		UploadTime string `json:"UploadTime"`
+	} `json:"meme"`
+	Status string `json:"status"`
+}
