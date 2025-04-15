@@ -33,13 +33,13 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 	}
 
 	// test kirim gambar
-	if lowerText == ".gambar" {
-		err := SendImage(client, msg.Info.Chat, "testing_folder/e64b254f3c010d51fd20958f365561a4_t.jpg", "TestGambar", true)
-		if err != nil {
-			// Log error properly
-			fmt.Printf("Error sending image: %v\n", err)
-		}
-	}
+	// if lowerText == ".gambar" {
+	// 	err := SendImage(client, msg.Info.Chat, "testing_folder/test.jpg", "TestGambar")
+	// 	if err != nil {
+	// 		// Log error properly
+	// 		fmt.Printf("Error sending image: %v\n", err)
+	// 	}
+	// }
 
 	// test reply
 	if lowerText == ".reply" {
@@ -83,6 +83,17 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 		}
 	}
 
+	if lowerText == ".meme" {
+		gambarMeme, caption, err := apiclient.RandomMeme()
+		if err != nil {
+			SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, err.Error(), true)
+		}
+		err = SendImage(client, msg.Info.Chat, gambarMeme, caption)
+		if err != nil {
+			SendTextMessage(client, msg.Info.ID, msg.Info.Sender, msg.Message, msg.Info.Chat, err.Error(), true)
+		}
+	}
+
 }
 
 // SendImage is a helper function to send images to a chat.
@@ -91,13 +102,13 @@ func HandleMessage(client *whatsmeow.Client, msg *events.Message) {
 // It then sends a message with the image to the recipient chat.
 // If deleteAfter is true, the image is deleted from the local file system after sending.
 // Returns an error if there is a problem reading the image, uploading the image, or sending the message.
-func SendImage(client *whatsmeow.Client, recipient types.JID, imagePath string, caption string, deleteAfter bool) error {
+func SendImage(client *whatsmeow.Client, recipient types.JID, gambarBytes []byte, caption string) error {
 	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaText)
-	gambarBytes, err := os.ReadFile(imagePath)
-	if err != nil {
-		fmt.Println("Error reading image:", err)
-		return err
-	}
+	// gambarBytes, err := os.ReadFile(imagePath)
+	// if err != nil {
+	// 	fmt.Println("Error reading image:", err)
+	// 	return err
+	// }
 	resp, err := client.Upload(context.Background(), gambarBytes, whatsmeow.MediaImage)
 	if err != nil {
 		fmt.Println("Error uploading image:", err)
@@ -106,7 +117,7 @@ func SendImage(client *whatsmeow.Client, recipient types.JID, imagePath string, 
 
 	imageMsg := &waE2E.ImageMessage{
 		Caption:  proto.String(caption),
-		Mimetype: proto.String("image/png"), // replace this with the actual mime type
+		Mimetype: proto.String("image/jpeg"), // replace this with the actual mime type
 		// you can also optionally add other fields like ContextInfo and JpegThumbnail here
 
 		URL:           &resp.URL,
@@ -120,14 +131,14 @@ func SendImage(client *whatsmeow.Client, recipient types.JID, imagePath string, 
 		ImageMessage: imageMsg,
 	})
 
-	// hapus file setelah kirim, berguna untuk api dll
-	if deleteAfter {
-		err := os.Remove(imagePath)
-		if err != nil {
-			fmt.Println("Error Menghapus Gambar: ", err)
-			return err
-		}
-	}
+	// // hapus file setelah kirim, berguna untuk api dll
+	// if deleteAfter {
+	// 	err := os.Remove(imagePath)
+	// 	if err != nil {
+	// 		fmt.Println("Error Menghapus Gambar: ", err)
+	// 		return err
+	// 	}
+	// }
 
 	return err
 }
