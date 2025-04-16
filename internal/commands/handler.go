@@ -2,7 +2,9 @@ package commands
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"time"
 
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
@@ -32,8 +34,12 @@ func NewHandler(client *whatsmeow.Client, logger waLog.Logger) *Handler {
 		prefix:   ".",
 	}
 	// Register commands here
-	h.RegisterCommand("ping", PingCommand) // Example command
-	// Add more commands: h.RegisterCommand("help", HelpCommand)
+	h.RegisterCommand("ping", PingCommand)
+	h.RegisterCommand("tebakkata", StartTebakKata)
+	h.RegisterCommand("jawab", TebakKata)
+	h.RegisterCommand("anon", StartMatching)
+	h.RegisterCommand("leave", Leave)
+	h.RegisterCommand("forward", ForwardMessage)
 	return h
 }
 
@@ -49,6 +55,7 @@ func (h *Handler) HandleEvent(evt *events.Message) {
 	if evt.Info.IsFromMe {
 		return
 	}
+	h.client.MarkRead([]types.MessageID{evt.Info.ID}, time.Now(), evt.Info.Chat, evt.Info.Sender)
 
 	// mendapatkan pesan dari extended message
 	msgText := ""
@@ -94,8 +101,8 @@ func (h *Handler) HandleEvent(evt *events.Message) {
 		err := cmdFunc(ctx, h.client, evt, args)
 		if err != nil {
 			h.logger.Errorf("Error executing command '%s': %v", commandName, err)
-			// Optionally send error message back to user
-			// SendTextMessage(ctx, evt.Info.Chat, fmt.Sprintf("Error: %v", err))
+			// Send error message to user
+			SendTextMessage(ctx, h.client, evt.Info.Chat, fmt.Sprintf("Error: %v", err))
 		}
 	}()
 }
