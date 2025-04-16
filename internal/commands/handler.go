@@ -63,6 +63,9 @@ func (h *Handler) HandleEvent(evt *events.Message) {
 		msgText = evt.Message.GetConversation()
 	} else if evt.Message.ExtendedTextMessage != nil && evt.Message.ExtendedTextMessage.Text != nil {
 		msgText = evt.Message.ExtendedTextMessage.GetText()
+	} else if evt.Message.ImageMessage != nil {
+		h.logger.Infof("Image Message Retrieved")
+		h.HandleImage(evt)
 	} else {
 		// Add support for other message types if needed (e.g., captions)
 		return
@@ -110,6 +113,35 @@ func (h *Handler) HandleEvent(evt *events.Message) {
 // SendTextMessage is a utility function within the commands package
 // Note: This could also live in internal/commands/utils.go
 func SendTextMessage(ctx context.Context, client *whatsmeow.Client, recipient types.JID, text string) (whatsmeow.SendResponse, error) {
+	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaText)
+	defer client.SendChatPresence(recipient, types.ChatPresencePaused, types.ChatPresenceMediaText)
 	msg := &waE2E.Message{Conversation: proto.String(text)}
 	return client.SendMessage(ctx, recipient, msg)
+}
+
+func SendImage(client *whatsmeow.Client, recipient types.JID, gambarBytes []byte, caption string, mimeType string) error {
+	client.SendChatPresence(recipient, types.ChatPresenceComposing, types.ChatPresenceMediaText)
+
+	resp, err := client.Upload(context.Background(), gambarBytes, whatsmeow.MediaImage)
+	if err != nil {
+		fmt.Println("Error uploading image:", err)
+		return err
+	}
+
+	imageMsg := &waE2E.ImageMessage{
+		Caption:  proto.String(caption),
+		Mimetype: proto.String(mimeType), // replace this with the actual mime type
+		// you can also optionally add other fields like ContextInfo and JpegThumbnail here
+
+		URL:           &resp.URL,
+		DirectPath:    &resp.DirectPath,
+		MediaKey:      resp.MediaKey,
+		FileEncSHA256: resp.FileEncSHA256,
+		FileSHA256:    resp.FileSHA256,
+		FileLength:    &resp.FileLength,
+	}
+	_, err = client.SendMessage(context.Background(), recipient, &waE2E.Message{
+		ImageMessage: imageMsg,
+	})
+	return err
 }
