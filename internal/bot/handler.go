@@ -29,30 +29,20 @@ func (b *Bot) eventHandler(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Connected:
 		b.logger.Infof("Handler: Connected")
-		// Perform actions upon connection if needed
 
 	case *events.Disconnected:
 		b.logger.Infof("Handler: Disconnected")
-		// Handle disconnection if needed
 
 	case *events.Message:
-		// Pass the event to the command handler
 		b.cmdHandler.HandleEvent(v)
-		// b.logger.Infof("Message: ", v.Message.Conversation)
 
 	case *events.Receipt:
-		// Optional: Handle receipts if your bot needs to track message status
-		// b.logger.Debugf("Received receipt for %v from %s", v.MessageIDs, v.SourceString())
 
 	case *events.Presence:
-		// Optional: Handle presence updates if needed
-		// b.logger.Debugf("Presence update from %s: Available=%t", v.From, !v.Unavailable)
 
 	case *events.LoggedOut:
 		b.logger.Warnf("Logged out, reason: %s", v.Reason)
-		// Handle logout, maybe attempt re-login or shutdown
 
-	// Add more event types if needed
 	default:
 		// b.logger.Debugf("Ignored event type: %T", evt)
 	}
