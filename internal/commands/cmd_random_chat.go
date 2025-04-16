@@ -17,6 +17,11 @@ var Rand rand.Rand
 var ActiveChat = make(map[string]*models.AnonymousChat)
 
 func StartMatching(ctx context.Context, client *whatsmeow.Client, evt *events.Message, args []string) error {
+	// IGNORE GROUP MESSAGE
+	if evt.Info.IsGroup {
+		return nil
+	}
+
 	if _, _, exist := IsUserInChat(evt.Info.Chat); exist {
 		_, err := SendTextMessage(ctx, client, evt.Info.Chat, "Anda Sudah Mendapatkan Pasangan Chat")
 		return err
@@ -60,6 +65,11 @@ func StartMatching(ctx context.Context, client *whatsmeow.Client, evt *events.Me
 }
 
 func Leave(ctx context.Context, client *whatsmeow.Client, evt *events.Message, args []string) error {
+	// IGNORE GROUP MESSAGE
+	if evt.Info.IsGroup {
+		return nil
+	}
+
 	if _, exists := WaitingQueue[evt.Info.Chat]; exists {
 		delete(WaitingQueue, evt.Info.Chat)
 		_, err := SendTextMessage(ctx, client, evt.Info.Chat, "Keluar Dari Antrian Anonymous Chat")
@@ -84,13 +94,28 @@ func Leave(ctx context.Context, client *whatsmeow.Client, evt *events.Message, a
 }
 
 func ForwardMessage(ctx context.Context, client *whatsmeow.Client, evt *events.Message, args []string) error {
+	// IGNORE GROUP MESSAGE
+	if evt.Info.IsGroup {
+		return nil
+	}
+
 	if _, partner, exist := IsUserInChat(evt.Info.Chat); exist {
-		_, err := SendTextMessage(ctx, client, partner, strings.Join(args, " "))
-		return err
+		if evt.Message.ImageMessage != nil {
+			imageData, err := client.Download(evt.Message.GetImageMessage())
+			if err != nil {
+				return err
+			}
+			SendImage(client, partner, imageData, strings.Join(args, " "), *evt.Message.ImageMessage.Mimetype)
+		} else {
+			_, err := SendTextMessage(ctx, client, partner, strings.Join(args, " "))
+			return err
+		}
 	} else {
 		_, err := SendTextMessage(ctx, client, evt.Info.Chat, "Not In Room")
 		return err
 	}
+
+	return nil
 }
 
 func IsUserInChat(jid types.JID) (string, types.JID, bool) {
