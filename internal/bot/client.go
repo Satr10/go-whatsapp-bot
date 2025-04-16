@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/Satr10/go-whatsapp-bot/internal/commands"
 	"github.com/Satr10/go-whatsapp-bot/internal/config"
@@ -11,14 +12,15 @@ import (
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 type Bot struct {
-	client *whatsmeow.Client
-	logger waLog.Logger
-	// cmdHandler set later
-	cmdHandler *commands.Handler
+	client      *whatsmeow.Client
+	logger      waLog.Logger
+	cmdHandler  *commands.Handler
+	upTimeSince time.Time
 }
 
 func New(driver string, dbPath string, logger waLog.Logger) (*Bot, error) {
@@ -62,11 +64,13 @@ func New(driver string, dbPath string, logger waLog.Logger) (*Bot, error) {
 		}
 	}
 	botInstance := &Bot{
-		client:     client,
-		logger:     logger,
-		cmdHandler: commands.NewHandler(client, logger),
+		client:      client,
+		logger:      logger,
+		cmdHandler:  commands.NewHandler(client, logger),
+		upTimeSince: time.Now(),
 	}
 
+	client.SendPresence(types.PresenceAvailable)
 	client.AddEventHandler(botInstance.eventHandler)
 
 	return botInstance, err
