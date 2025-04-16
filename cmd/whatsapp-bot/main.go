@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/Satr10/go-whatsapp-bot/internal/bot"
+	"github.com/Satr10/go-whatsapp-bot/internal/commands"
 	"github.com/Satr10/go-whatsapp-bot/internal/config"
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
@@ -20,6 +23,10 @@ func eventHandler(evt interface{}) {
 }
 
 func main() {
+
+	// initialize random for stuff
+	commands.Rand = *rand.New(rand.NewSource(time.Now().UnixMicro()))
+
 	logger := waLog.Stdout("Main", "INFO", true)
 	dbPath := config.Config("DB_CONNECTION_STRING")
 	dbDriver := config.Config("DB_TYPE")
